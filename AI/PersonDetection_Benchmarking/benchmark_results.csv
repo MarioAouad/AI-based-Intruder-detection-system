@@ -1,0 +1,10 @@
+model_name,frames_processed,total_time_sec,avg_fps,avg_confidence,unique_track_ids,peak_vram_mib
+YOLOv8-Nano,1342,16.24,85.51,0.9267,1,380.6
+YOLOv8-Small,1342,15.37,88.26,0.9363,1,408.6
+YOLOv8-Medium,1342,17.03,79.6,0.9428,2,478.6
+YOLO11-Nano,1342,18.08,74.81,0.9298,1,420.6
+YOLO11-Small,1342,17.26,78.29,0.9384,2,448.6
+YOLO11-Medium,1342,18.63,72.62,0.9412,1,492.6
+RT-DETR-L,1342,34.93,38.58,0.9561,1,558.6
+RF-DETR,1342,5.56,0.0,0.0,0,388.6
+RTMDet,1342,5.53,0.0,0.0,0,388.6

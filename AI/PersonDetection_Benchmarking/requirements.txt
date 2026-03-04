@@ -1,0 +1,41 @@
+# ===========================================================================
+# requirements.txt
+# Object Detection & Benchmarking Suite – RTX 4060 (CUDA 12.x)
+# ===========================================================================
+#
+# Install order:
+#   1. PyTorch with CUDA first (from pytorch.org):
+#      pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+#   2. Then install this file:
+#      pip install -r requirements.txt
+# ===========================================================================
+
+# ── Core CV & Ultralytics ───────────────────────────────────────────────────
+ultralytics>=8.3.0       # YOLOv8, YOLO11, RT-DETR via unified API
+opencv-python>=4.9.0     # Frame capture, drawing, VideoWriter
+numpy>=1.26.0            # Array ops
+
+# ── GPU Telemetry ────────────────────────────────────────────────────────────
+pynvml>=11.5.0           # NVIDIA VRAM monitoring (nvidia-ml-py wrapper)
+
+# ── Console output ───────────────────────────────────────────────────────────
+tabulate>=0.9.0          # Pretty benchmark summary table
+
+# ── Optional: RF-DETR (Roboflow DETR) ────────────────────────────────────────
+# Uncomment to enable RF-DETR support:
+# rfdetr>=1.0.0
+
+# ── Optional: RTMDet (OpenMMLab) ──────────────────────────────────────────────
+# RTMDet requires the OpenMMLab stack.  Install separately:
+#   pip install -U openmim
+#   mim install mmengine
+#   mim install "mmcv>=2.0.0"
+#   mim install mmdet
+# Then uncomment:
+# mmdet>=3.3.0
+
+# ── Optional: Supervision (used by rfdetr internally) ─────────────────────────
+# supervision>=0.20.0
+
+# ── Optional: PIL (image conversion for RF-DETR) ─────────────────────────────
+#Pillow>=10.0.0
