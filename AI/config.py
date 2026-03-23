@@ -6,6 +6,7 @@ Edit this file to calibrate the system for your specific camera/environment.
 """
 
 import os
+import numpy as np
 
 # ---------------------------------------------------------------------------
 # Model
@@ -17,19 +18,27 @@ TRACKER_CONFIG  = "bytetrack.yaml"
 DEVICE          = "cuda"         # Change to "cpu" if no CUDA GPU is present
 
 # ---------------------------------------------------------------------------
-# Spatial constants  (Triangle Similarity distance estimation)
+# Camera Intrinsic Matrix  (obtained from Auto-YOLO calibration experiment)
 # ---------------------------------------------------------------------------
-# Average adult shoulder width in centimetres.
-# Used as the known real-world reference measurement.
-REAL_TORSO_WIDTH_CM = 45.0
+# This 3×3 matrix was produced by camera_calibration_testing/method_auto_yolo.py
+# using Triangle Similarity with a person at 1 m and adjusted torso width.
+#
+#   f_x = f_y = 1108.9 px   (focal length in pixels)
+#   c_x = 640.0 px          (principal point x, image centre)
+#   c_y = 360.0 px          (principal point y, image centre)
+#
+CAMERA_MATRIX = np.array([
+    [1108.9,      0.0,    640.0],
+    [   0.0,   1108.9,    360.0],
+    [   0.0,      0.0,      1.0],
+], dtype=np.float64)
 
-# ┌─────────────────────────────────────────────────────────────────────────┐
-# │  CALIBRATION REQUIRED                                                   │
-# │  Stand exactly 1 metre in front of your camera, run the script, and     │
-# │  measure the pixel width of your torso/shoulders in the bounding box.   │
-# │  Enter that value below.                                                │
-# └─────────────────────────────────────────────────────────────────────────┘
-CALIBRATED_PIXEL_WIDTH_1M = 300   # ← Replace with your measured pixel width
+# ---------------------------------------------------------------------------
+# Spatial constants
+# ---------------------------------------------------------------------------
+# Adjusted torso/shoulder width in centimetres (validated during calibration
+# experiments — 49.5 cm gave the most accurate distance readings).
+REAL_TORSO_WIDTH_CM = 49.5
 
 # Distance (metres) at which the threat zone activates.
 ZONE_RADIUS_METERS = 2.0
@@ -38,7 +47,7 @@ ZONE_RADIUS_METERS = 2.0
 # Temporal constants
 # ---------------------------------------------------------------------------
 # How many consecutive seconds inside the zone before TRIGGER fires.
-TRIGGER_TIME_SECONDS = 30.0
+TRIGGER_TIME_SECONDS = 10.0
 
 # ---------------------------------------------------------------------------
 # Display / visual constants
@@ -55,6 +64,8 @@ FONT_THICKNESS = 1
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-BASE_DIR     = os.path.dirname(os.path.abspath(__file__))
-TARGETS_DIR  = os.path.join(BASE_DIR, "captured_targets")  # Cropped face saves
+BASE_DIR          = os.path.dirname(os.path.abspath(__file__))
+TARGETS_DIR       = os.path.join(BASE_DIR, "captured_targets")        # Raw torso crops
+# TARGETS_FACES_DIR = os.path.join(BASE_DIR, "captured_targets_faces")  # Verified face crops
 os.makedirs(TARGETS_DIR, exist_ok=True)
+# os.makedirs(TARGETS_FACES_DIR, exist_ok=True)

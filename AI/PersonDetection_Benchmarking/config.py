@@ -31,38 +31,49 @@ TRACKER_CONFIG = "bytetrack.yaml"
 # Paths
 # ---------------------------------------------------------------------------
 BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
-VIDEO_PATH    = os.path.join(BASE_DIR, "test_video.mp4")   # 60-second test clip
-OUTPUT_CSV    = os.path.join(BASE_DIR, "benchmark_results.csv")
-OUTPUT_VIDEO_DIR = os.path.join(BASE_DIR, "output_videos") # Optional annotated outputs
+
+# PARENT_DIR = BASE_DIR because all .pt weight files now live in this
+# same folder alongside main_benchmark.py and config.py.
+PARENT_DIR    = BASE_DIR
+
+VIDEO_PATH       = os.path.join(BASE_DIR, "test_video.mp4")   # 60-second test clip
+OUTPUT_CSV       = os.path.join(BASE_DIR, "benchmark_results.csv")
+OUTPUT_VIDEO_DIR = os.path.join(BASE_DIR, "output_videos")     # Optional annotated outputs
 
 # ---------------------------------------------------------------------------
 # Model list
 # Each entry is a dict with:
 #   "name"    - human-readable label used in CSVs / console output
-#   "weights" - Ultralytics model identifier (auto-downloaded if not cached)
+#   "weights" - absolute path to the .pt file in BASE_DIR
 #   "type"    - "yolo" | "rtdetr" | "rfdetr" | "rtmdet"
+#
+# CRITICAL: filenames must exactly match what is on disk.
+#   yolov8n.pt, yolov8s.pt, yolov8m.pt   (NOT yolo8*.pt)
+#   yolo11n.pt, yolo11s.pt, yolo11m.pt   (NOT yolov11*.pt)
 # ---------------------------------------------------------------------------
 MODELS = [
     # ── YOLOv8 family ────────────────────────────────────────────────────
-    {"name": "YOLOv8-Nano",   "weights": "yolov8n.pt",  "type": "yolo"},
-    {"name": "YOLOv8-Small",  "weights": "yolov8s.pt",  "type": "yolo"},
-    {"name": "YOLOv8-Medium", "weights": "yolov8m.pt",  "type": "yolo"},
+    {"name": "YOLOv8-Nano",   "weights": os.path.join(BASE_DIR, "yolov8n.pt"),  "type": "yolo"},
+    {"name": "YOLOv8-Small",  "weights": os.path.join(BASE_DIR, "yolov8s.pt"),  "type": "yolo"},
+    {"name": "YOLOv8-Medium", "weights": os.path.join(BASE_DIR, "yolov8m.pt"),  "type": "yolo"},
 
     # ── YOLO11 family ─────────────────────────────────────────────────────
-    {"name": "YOLO11-Nano",   "weights": "yolo11n.pt",  "type": "yolo"},
-    {"name": "YOLO11-Small",  "weights": "yolo11s.pt",  "type": "yolo"},
-    {"name": "YOLO11-Medium", "weights": "yolo11m.pt",  "type": "yolo"},
+    {"name": "YOLO11-Nano",   "weights": os.path.join(BASE_DIR, "yolo11n.pt"),  "type": "yolo"},
+    {"name": "YOLO11-Small",  "weights": os.path.join(BASE_DIR, "yolo11s.pt"),  "type": "yolo"},
+    {"name": "YOLO11-Medium", "weights": os.path.join(BASE_DIR, "yolo11m.pt"),  "type": "yolo"},
 
     # ── Transformer / Hybrid architectures ───────────────────────────────
     # RT-DETR: Real-Time DEtection TRansformer (Ultralytics wrapper)
-    {"name": "RT-DETR-L",     "weights": "rtdetr-l.pt", "type": "rtdetr"},
+    {"name": "RT-DETR-L",     "weights": os.path.join(BASE_DIR, "rtdetr-l.pt"), "type": "rtdetr"},
 
     # RF-DETR: Roboflow DETR – install via  pip install rfdetr
     # Uses the rfdetr Python API instead of Ultralytics directly.
+    # (no .pt file — handled by the rfdetr library)
     {"name": "RF-DETR",       "weights": "rf-detr",     "type": "rfdetr"},
 
     # RTMDet: mmdeploy-based detector – install via  pip install mmdet
     # Requires an MMDET config; the "weights" field is used as a tag only.
+    # (no .pt file — handled by the mmdet library)
     {"name": "RTMDet",        "weights": "rtmdet",      "type": "rtmdet"},
 ]
 

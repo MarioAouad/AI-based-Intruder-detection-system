@@ -17,10 +17,13 @@ Run:
 Controls:
     Q  –  quit the live window
 
-Calibration reminder
---------------------
-Before first use, open config.py and set CALIBRATED_PIXEL_WIDTH_1M to the
-pixel width of your shoulders when you stand exactly 1 metre from the camera.
+Calibration
+-----------
+Distance estimation uses the Camera Intrinsic Matrix stored in config.py
+(CAMERA_MATRIX).  The focal length f_x is extracted at runtime by
+spatial_math.DistanceEstimator.  To re-calibrate, run
+camera_calibration_testing/method_auto_yolo.py and paste the output matrix
+into config.py → CAMERA_MATRIX.
 """
 
 import os
@@ -32,8 +35,8 @@ import torch
 from ultralytics import YOLO
 
 import config
-from spatial_math  import DistanceEstimator
-from threat_timer  import ZoneTimer
+from spatial_math   import DistanceEstimator
+from threat_timer   import ZoneTimer
 
 
 # ---------------------------------------------------------------------------
@@ -273,7 +276,7 @@ def run_watchdog() -> None:
         if not estimator.is_calibrated():
             cv2.putText(
                 frame,
-                "DISTANCE UNCALIBRATED  –  see config.py",
+                "DISTANCE UNCALIBRATED  –  set CAMERA_MATRIX in config.py",
                 (10, 56),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.55,
                 (0, 100, 255), 2, cv2.LINE_AA,

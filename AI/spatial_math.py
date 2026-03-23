@@ -1,85 +1,106 @@
 """
-spatial_math.py  –  Triangle Similarity Distance Engine
-========================================================
+spatial_math.py  –  Distance Estimation via Triangle Similarity
+================================================================
 
-Triangle Similarity (also called "similar triangles" or "focal-length method")
-is a classic monocular depth estimation technique.
+This module dynamically extracts the focal length f_x from the Camera
+Intrinsic Matrix defined in config.py and uses it in the Triangle
+Similarity formula to estimate real-world distance.
 
-The core insight
-----------------
-When a camera photographs an object of known real-world width W at a distance D,
-it appears to be P pixels wide in the image.  The relationship between these three
-quantities and the camera's focal length F is:
+Background  (for the university report)
+-----------------------------------------
+Triangle Similarity is a monocular depth estimation technique based on
+the geometry of similar triangles formed by the camera's optical axis.
 
-        F = (P * D) / W          ← calibration step (D is fixed at 1 m)
+Given:
+    f_x  = focal length in pixels, extracted from CAMERA_MATRIX[0, 0]
+    W    = known real-world width of the object (REAL_TORSO_WIDTH_CM)
+    P    = observed pixel width of the object's bounding box
 
-Once F is known, the formula can be rearranged to compute D from any new P:
+The distance formula is:
 
-        D = (W * F) / P          ← live distance estimation
+        distance_cm = (W × f_x) / P
+        distance_m  = distance_cm / 100
 
-In this system:
-    W  = REAL_TORSO_WIDTH_CM (in cm)
-    D  = 100 cm  (1 metre, the calibration distance)
-    P  = CALIBRATED_PIXEL_WIDTH_1M  (measured once by the user)
-    F  = derived focal length  (stored in self.focal_length)
+The f_x value was obtained from the Auto-YOLO calibration experiment
+(camera_calibration_testing/method_auto_yolo.py) which uses the same
+Triangle Similarity principle to compute f_x once at a known distance:
+
+        f_x = (P_calibration × D_known) / W
+
+After calibration, f_x is stored inside the 3×3 intrinsic matrix K:
+
+        K = ┌  f_x   0   c_x ┐
+            │   0   f_y  c_y │
+            └   0    0    1  ┘
+
+This module reads K at runtime so that if the camera or calibration
+changes, only config.py needs to be updated.
 """
 
-from config import REAL_TORSO_WIDTH_CM, CALIBRATED_PIXEL_WIDTH_1M
+import numpy as np
+
+from config import CAMERA_MATRIX, REAL_TORSO_WIDTH_CM
 
 
 class DistanceEstimator:
     """
-    Computes real-world distance from the camera to a detected person using
-    the Triangle Similarity method.
+    Computes real-world distance from the camera to a detected person
+    using Triangle Similarity, dynamically extracting f_x from the
+    Camera Intrinsic Matrix.
 
     Parameters
     ----------
+    camera_matrix : np.ndarray (3×3)
+        The camera intrinsic matrix K.  f_x is read from K[0, 0].
     real_width_cm : float
-        Known real-world width of the reference object (human torso/shoulders).
-    pixel_width_at_1m : float or int
-        How many pixels wide that same torso appears when the person stands
-        exactly 1 metre from the camera.  Must be > 0.
-
-    Raises
-    ------
-    RuntimeError
-        If pixel_width_at_1m is 0 (calibration has not been performed yet).
+        Known real-world width of a human torso/shoulders in cm.
     """
 
     def __init__(
         self,
-        real_width_cm: float    = REAL_TORSO_WIDTH_CM,
-        pixel_width_at_1m: float = CALIBRATED_PIXEL_WIDTH_1M,
+        camera_matrix: np.ndarray = CAMERA_MATRIX,
+        real_width_cm: float      = REAL_TORSO_WIDTH_CM,
     ):
         self.real_width_cm = real_width_cm
 
-        if pixel_width_at_1m <= 0:
-            # Focal length cannot be calculated without a valid calibration value.
-            # We store 0 and let calculate_distance() return None gracefully.
-            self.focal_length = 0.0
+        # ── Extract f_x directly from the intrinsic matrix ────────────
+        # K[0, 0] = f_x  (horizontal focal length in pixels)
+        self.focal_length = float(camera_matrix[0, 0])
+
+        if self.focal_length <= 0:
             print(
-                "[DistanceEstimator] WARNING: CALIBRATED_PIXEL_WIDTH_1M = 0.\n"
-                "  Distance estimation is DISABLED until you:\n"
-                "    1. Stand exactly 1 m from your camera.\n"
-                "    2. Note the pixel width of your shoulders in the bounding box.\n"
-                "    3. Set CALIBRATED_PIXEL_WIDTH_1M in config.py and restart."
+                "[DistanceEstimator] WARNING: f_x from CAMERA_MATRIX is ≤ 0.\n"
+                "  Distance estimation is DISABLED.\n"
+                "  Run camera_calibration_testing/method_auto_yolo.py to get\n"
+                "  a valid matrix and paste it into config.py → CAMERA_MATRIX."
             )
         else:
-            # Triangle Similarity: F = (P × D) / W
-            # D is expressed in cm (100 cm = 1 m) so units are consistent.
-            self.focal_length = (pixel_width_at_1m * 100.0) / real_width_cm
             print(
-                f"[DistanceEstimator] Focal length computed: "
+                f"[DistanceEstimator] f_x extracted from intrinsic matrix: "
                 f"{self.focal_length:.2f} px  "
-                f"(ref: {pixel_width_at_1m} px @ 1 m, torso={real_width_cm} cm)"
+                f"(torso reference = {real_width_cm} cm)"
             )
+
+    # ------------------------------------------------------------------
+    # Triangle Similarity distance formula
+    # ------------------------------------------------------------------
+    #   distance_cm = (REAL_TORSO_WIDTH_CM × f_x) / pixel_width
+    #   distance_m  = distance_cm / 100.0
+    #
+    # This is the rearranged form of:
+    #   f_x = (pixel_width × distance_cm) / REAL_TORSO_WIDTH_CM
+    # which was used during calibration (person at 100 cm).
+    # ------------------------------------------------------------------
 
     def calculate_distance(self, pixel_width: float) -> float | None:
         """
         Estimate the person's distance from the camera in metres.
 
-        Implements:  D = (W × F) / (P × 100)
-        The division by 100 converts the result from centimetres to metres.
+        Uses Triangle Similarity, dynamically extracting f_x from the
+        intrinsic matrix set during __init__:
+
+            distance_cm = (W × f_x) / P
+            distance_m  = distance_cm / 100
 
         Parameters
         ----------
@@ -88,21 +109,20 @@ class DistanceEstimator:
 
         Returns
         -------
-        float
-            Estimated distance in metres, or None if calibration is missing
-            or pixel_width is zero (prevents ZeroDivisionError).
+        float | None
+            Estimated distance in metres (rounded to 2 d.p.), or None
+            if calibration is missing or pixel_width is zero.
         """
         if self.focal_length <= 0:
-            return None  # Calibration not done yet
+            return None  # No valid calibration
 
         if pixel_width <= 0:
-            return None  # Guard: degenerate / collapsed bounding box
+            return None  # Guard against division by zero
 
-        # Triangle Similarity rearranged to solve for distance.
         distance_cm = (self.real_width_cm * self.focal_length) / pixel_width
         distance_m  = distance_cm / 100.0
         return round(distance_m, 2)
 
     def is_calibrated(self) -> bool:
-        """Return True if a valid focal length has been calculated."""
+        """Return True if a valid focal length was extracted from the matrix."""
         return self.focal_length > 0
