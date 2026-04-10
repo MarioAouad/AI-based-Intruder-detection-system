@@ -1,0 +1,24 @@
+# Root Python Dependencies
+# ========================
+# Install: pip install -r requirements.txt
+
+# ── Core detection & tracking ────────────────────────────────────────
+ultralytics>=8.0.0
+opencv-python>=4.8.0
+opencv-contrib-python>=4.8.0
+numpy>=1.24.0
+
+# ── Face recognition ─────────────────────────────────────────────────
+deepface>=0.0.80
+tf-keras>=2.16.0
+
+# ── Face detection (standalone benchmarking) ─────────────────────────
+mtcnn>=0.1.1
+mediapipe>=0.10.0
+
+# ── Visualisation ────────────────────────────────────────────────────
+matplotlib>=3.7.0
+
+# ── Deep learning backend ────────────────────────────────────────────
+torch>=2.0.0
+torchvision>=0.15.0

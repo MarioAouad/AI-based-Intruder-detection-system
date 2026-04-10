@@ -1,0 +1,7 @@
+# face_detection_benchmarking dependencies
+opencv-python>=4.8.0
+opencv-contrib-python>=4.8.0
+mtcnn>=0.1.1
+mediapipe>=0.10.0
+matplotlib>=3.7.0
+numpy>=1.24.0

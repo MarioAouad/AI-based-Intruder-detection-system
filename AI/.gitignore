@@ -1,0 +1,45 @@
+# ═══════════════════════════════════════════════════════════════════════
+# .gitignore — AI Intruder Detection System
+# ═══════════════════════════════════════════════════════════════════════
+
+# ── Images & Videos (raw captures, test media) ───────────────────────
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.webp
+*.mp4
+*.avi
+
+# ── KEEP final benchmark report images ───────────────────────────────
+!**/results/*.png
+!**/benchmark_graphs/*.png
+
+# ── Model weights (large binary files) ───────────────────────────────
+*.pt
+*.onnx
+*.weights
+
+# ── Python cache ─────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+
+# ── IDE / editor ─────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── OS junk ──────────────────────────────────────────────────────────
+Thumbs.db
+.DS_Store
+
+# ── Environment / build ──────────────────────────────────────────────
+*.egg-info/
+dist/
+build/
+.env
+
+# ── NOTE: config.py is TRACKED (vital pipeline configuration) ────────
+# Do NOT add config.py to this ignore list.
