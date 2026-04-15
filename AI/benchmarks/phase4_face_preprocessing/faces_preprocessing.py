@@ -52,11 +52,11 @@ import numpy as np
 # so the script never touches files outside its own sandbox.
 # ---------------------------------------------------------------------------
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
-PROJECT_DIR = os.path.dirname(SCRIPT_DIR)               # AI Part/
+SRC_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', 'src'))
 
-# Add project root to sys.path so we can import face_verifier from AI Part/.
-if PROJECT_DIR not in sys.path:
-    sys.path.insert(0, PROJECT_DIR)
+# Add project src to sys.path so we can import face_verifier.
+if SRC_DIR not in sys.path:
+    sys.path.insert(0, SRC_DIR)
 
 from face_verifier import FaceVerifier  # noqa: E402 (after sys.path edit)
 

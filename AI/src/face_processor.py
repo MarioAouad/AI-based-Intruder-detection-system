@@ -41,7 +41,6 @@ import os
 import glob
 import time
 import math
-import base64
 
 import cv2
 import numpy as np
@@ -52,7 +51,7 @@ from face_verifier import FaceVerifier
 # ---------------------------------------------------------------------------
 # Paths  (all derived from config.py — single source of truth)
 # ---------------------------------------------------------------------------
-FACES_ALIGNED_DIR         = os.path.join(config.BASE_DIR, "faces_aligned")
+FACES_ALIGNED_DIR         = os.path.join(config.BASE_DIR, "data", "faces_aligned")
 FACES_ALIGNED_OWNER_DIR   = os.path.join(FACES_ALIGNED_DIR, "owner")
 FACES_ALIGNED_INTRUDER_DIR = os.path.join(FACES_ALIGNED_DIR, "intruder")
 
@@ -70,37 +69,6 @@ IMAGE_EXTS     = ("*.jpg", "*.jpeg", "*.png", "*.bmp", "*.webp")
 # ╔══════════════════════════════════════════════════════════════════════════╗
 # ║                     PREPROCESSING FUNCTIONS                            ║
 # ╚══════════════════════════════════════════════════════════════════════════╝
-
-
-def detect_face_with_landmarks(image: np.ndarray, verifier: FaceVerifier):
-    """
-    Run YuNet and return the best detection + eye landmarks.
-
-    YuNet row: [x, y, w, h,
-                right_eye_x, right_eye_y, left_eye_x, left_eye_y,
-                nose_x, nose_y,
-                mouth_right_x, mouth_right_y, mouth_left_x, mouth_left_y,
-                score]
-
-    Returns (bbox, left_eye, right_eye) or None.
-    """
-    if verifier.detector is None:
-        return None
-
-    h, w = image.shape[:2]
-    verifier.detector.setInputSize((w, h))
-    _, detections = verifier.detector.detect(image)
-
-    if detections is None or len(detections) == 0:
-        return None
-
-    best = max(detections, key=lambda d: d[14])
-    x, y, bw, bh = int(best[0]), int(best[1]), int(best[2]), int(best[3])
-    right_eye = (float(best[4]), float(best[5]))
-    left_eye  = (float(best[6]), float(best[7]))
-
-    return (x, y, bw, bh), left_eye, right_eye
-
 
 # ── Step 1: Affine Eye-Alignment ──────────────────────────────────────────
 
@@ -171,15 +139,6 @@ def step3_clahe_lighting(image_160: np.ndarray) -> np.ndarray:
     return cv2.cvtColor(cv2.merge([l_eq, a_ch, b_ch]), cv2.COLOR_LAB2BGR)
 
 
-# ── Helper: base64 encoding for webhook payloads ─────────────────────────
-
-def to_base64(image: np.ndarray, ext: str = ".jpg") -> str:
-    """Encode a BGR image as a base64 string."""
-    success, buffer = cv2.imencode(ext, image)
-    if not success:
-        return ""
-    return base64.b64encode(buffer).decode("utf-8")
-
 
 # ╔══════════════════════════════════════════════════════════════════════════╗
 # ║                          FILE HELPERS                                  ║
@@ -232,7 +191,7 @@ def process_image(img_path: str, verifier: FaceVerifier) -> bool:
         return False
 
     # ── Gatekeeper: YuNet face check ──────────────────────────────────
-    result = detect_face_with_landmarks(image, verifier)
+    result = verifier.get_face_data(image)
     if result is None:
         print(f"  [GATEKEEPER] Rejected: {basename} - No face detected.")
         delete_file(img_path)

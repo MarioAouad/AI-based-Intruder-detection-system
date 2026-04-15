@@ -9,9 +9,17 @@ import os
 import numpy as np
 
 # ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+BASE_DIR          = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TARGETS_DIR       = os.path.join(BASE_DIR, "data", "captured_targets")        # Raw torso crops
+os.makedirs(TARGETS_DIR, exist_ok=True)
+
+# ---------------------------------------------------------------------------
 # Model
 # ---------------------------------------------------------------------------
-MODEL_WEIGHTS   = "yolov8s.pt"   # Auto-downloaded by Ultralytics if not cached
+#MODEL_WEIGHTS   = "yolov8s.pt"   # Auto-downloaded by Ultralytics if not cached
+MODEL_WEIGHTS   = os.path.join(BASE_DIR, "src", "yolov8s.pt")
 CONF_THRESHOLD  = 0.70           # High threshold → fewer false positives
 TARGET_CLASS    = 0              # COCO class 0 = 'person'
 TRACKER_CONFIG  = "bytetrack.yaml"
@@ -60,12 +68,3 @@ COLOR_TRIGGER = (0,  165, 255)    # Orange – timer has fired (TRIGGER)
 FONT          = 0                 # cv2.FONT_HERSHEY_SIMPLEX
 FONT_SCALE    = 0.55
 FONT_THICKNESS = 1
-
-# ---------------------------------------------------------------------------
-# Paths
-# ---------------------------------------------------------------------------
-BASE_DIR          = os.path.dirname(os.path.abspath(__file__))
-TARGETS_DIR       = os.path.join(BASE_DIR, "captured_targets")        # Raw torso crops
-# TARGETS_FACES_DIR = os.path.join(BASE_DIR, "captured_targets_faces")  # Verified face crops
-os.makedirs(TARGETS_DIR, exist_ok=True)
-# os.makedirs(TARGETS_FACES_DIR, exist_ok=True)

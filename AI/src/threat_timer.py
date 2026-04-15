@@ -104,13 +104,6 @@ class ZoneTimer:
         if track_id in self._timers:
             del self._timers[track_id]
 
-    def remove(self, track_id: int) -> None:
-        """
-        Remove an ID that has disappeared from the frame entirely
-        (called by the orchestrator when an ID is no longer detected).
-        Alias for reset() — kept as a semantic alias for clarity.
-        """
-        self.reset(track_id)
 
     def purge_stale(self, active_ids: set) -> None:
         """
@@ -130,16 +123,7 @@ class ZoneTimer:
     # Introspection helpers
     # ------------------------------------------------------------------
 
-    def elapsed(self, track_id: int) -> float:
-        """Return seconds in zone for an ID, or 0.0 if not being tracked."""
-        if track_id not in self._timers:
-            return 0.0
-        return round(time.monotonic() - self._timers[track_id], 1)
-
     def active_count(self) -> int:
         """How many unique IDs currently have active timers."""
         return len(self._timers)
 
-    def __repr__(self) -> str:
-        active = {tid: round(time.monotonic() - ts, 1) for tid, ts in self._timers.items()}
-        return f"ZoneTimer(zone={self.zone_radius_m}m, trigger={self.trigger_time_s}s, active={active})"

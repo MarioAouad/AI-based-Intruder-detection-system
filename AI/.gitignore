@@ -41,5 +41,5 @@ dist/
 build/
 .env
 
-# ── NOTE: config.py is TRACKED (vital pipeline configuration) ────────
-# Do NOT add config.py to this ignore list.
+# ── NOTE: src/config.py is TRACKED (vital pipeline configuration) ────────
+# Do NOT add src/config.py to this ignore list.
