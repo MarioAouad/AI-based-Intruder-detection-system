@@ -22,3 +22,10 @@ matplotlib>=3.7.0
 # ── Deep learning backend ────────────────────────────────────────────
 torch>=2.0.0
 torchvision>=0.15.0
+
+# ── Web API & Backend Integration ────────────────────────────────────
+fastapi
+uvicorn
+httpx
+python-dotenv
+pydantic

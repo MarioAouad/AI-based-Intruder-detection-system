@@ -29,6 +29,7 @@ into config.py → CAMERA_MATRIX.
 import os
 import time
 import datetime
+import argparse
 
 import cv2
 import torch
@@ -112,7 +113,7 @@ def _annotate_person(
 # Helper: save a cropped image of the triggered person
 # ---------------------------------------------------------------------------
 
-def _save_crop(frame, x1: int, y1: int, x2: int, y2: int, track_id: int) -> str:
+def _save_crop(frame, x1: int, y1: int, x2: int, y2: int, track_id: int, property_id: int) -> str:
     """
     Crop the bounding box region from the frame and save it to TARGETS_DIR.
     Returns the full path of the saved file.
@@ -127,7 +128,7 @@ def _save_crop(frame, x1: int, y1: int, x2: int, y2: int, track_id: int) -> str:
         return ""
 
     ts       = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"target_ID{track_id}_{ts}.jpg"
+    filename = f"target_p{property_id}_id{track_id}_{ts}.jpg"
     filepath = os.path.join(config.TARGETS_DIR, filename)
     cv2.imwrite(filepath, crop)
     return filepath
@@ -137,7 +138,7 @@ def _save_crop(frame, x1: int, y1: int, x2: int, y2: int, track_id: int) -> str:
 # Main loop
 # ---------------------------------------------------------------------------
 
-def run_watchdog() -> None:
+def run_watchdog(property_id: int = 1, video_source=0) -> None:
     """
     Entry point.  Opens the webcam, loads the model, and runs the
     detection / tracking / alerting loop until the user presses Q.
@@ -156,8 +157,8 @@ def run_watchdog() -> None:
     zone_timer = ZoneTimer()
 
     # ── 4. Open webcam ────────────────────────────────────────────────────
-    print("[Watchdog] Opening webcam (index 0) …")
-    cap = cv2.VideoCapture(0)
+    print(f"[Watchdog] Opening video source (index {video_source}) …")
+    cap = cv2.VideoCapture(video_source)
     if not cap.isOpened():
         print("[Watchdog] ERROR: Cannot open webcam. Exiting.")
         return
@@ -234,7 +235,7 @@ def run_watchdog() -> None:
                     )
 
                     # ---- Save cropped bounding box to disk ----
-                    saved_path = _save_crop(frame, x1, y1, x2, y2, track_id)
+                    saved_path = _save_crop(frame, x1, y1, x2, y2, track_id, property_id)
                     if saved_path:
                         print(f"[Watchdog] Saved crop → {saved_path}")
 
@@ -301,4 +302,15 @@ def run_watchdog() -> None:
 # Entry point
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    run_watchdog()
+    parser = argparse.ArgumentParser(description="Watchdog Edge Node")
+    parser.add_argument("--property", type=int, required=True, help="Property ID for tagging saved frames")
+    parser.add_argument("--camera", type=str, default="0", help="Video source (e.g. '0' for webcam, or video path)")
+    args = parser.parse_args()
+
+    # Parse numerical strings to integers for physical webcams
+    try:
+        parsed_camera_source = int(args.camera)
+    except ValueError:
+        parsed_camera_source = args.camera
+
+    run_watchdog(property_id=args.property, video_source=parsed_camera_source)

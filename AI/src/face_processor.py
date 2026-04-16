@@ -53,9 +53,8 @@ from face_verifier import FaceVerifier
 # ---------------------------------------------------------------------------
 FACES_ALIGNED_DIR         = os.path.join(config.BASE_DIR, "data", "faces_aligned")
 FACES_ALIGNED_OWNER_DIR   = os.path.join(FACES_ALIGNED_DIR, "owner")
-FACES_ALIGNED_INTRUDER_DIR = os.path.join(FACES_ALIGNED_DIR, "intruder")
 
-for d in [FACES_ALIGNED_DIR, FACES_ALIGNED_OWNER_DIR, FACES_ALIGNED_INTRUDER_DIR]:
+for d in [FACES_ALIGNED_DIR, FACES_ALIGNED_OWNER_DIR]:
     os.makedirs(d, exist_ok=True)
 
 # ---------------------------------------------------------------------------
