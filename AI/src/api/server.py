@@ -65,7 +65,6 @@ def send_detection_event(
     similarity_score: float,       # 0.0 to 100.0
     snapshot_path: str,            # path to snapshot image file on disk
     person_id: int | None = None,  # None if nobody was recognized
-    note: str | None = None,
 ):
     with open(snapshot_path, "rb") as f:
         snapshot_base64 = base64.b64encode(f.read()).decode("utf-8")
@@ -76,7 +75,6 @@ def send_detection_event(
         "snapshot_base64": snapshot_base64,
         "person_id": person_id,
         "occurred_at": datetime.datetime.utcnow().isoformat(),
-        "note": note,
     }
 
     try:

@@ -15,6 +15,7 @@ def run_orchestrator():
     # Safely construct the absolute paths to the scripts
     processor_path = os.path.join(BASE_DIR, "src", "face_processor.py")
     db_worker_path = os.path.join(BASE_DIR, "src", "database", "db_worker.py")
+    matcher_path = os.path.join(BASE_DIR, "src", "face_matcher.py")
 
     print("============================================================")
     print("  STARTING AI CORE SERVER")
@@ -29,10 +30,15 @@ def run_orchestrator():
     # Start the database worker
     db_worker_process = subprocess.Popen([sys.executable, db_worker_path])
     
+    print(f"[main.py] Launching {matcher_path}...")
+    # Start the face matcher
+    matcher_process = subprocess.Popen([sys.executable, matcher_path])
+    
     try:
         # Wait for processes to complete naturally
         processor_process.wait()
         db_worker_process.wait()
+        matcher_process.wait()
     except KeyboardInterrupt:
         # Graceful shutdown on Ctrl+C
         print("\n============================================================")
@@ -45,9 +51,13 @@ def run_orchestrator():
         print("[main.py] Terminating db_worker...")
         db_worker_process.terminate()
         
+        print("[main.py] Terminating face_matcher...")
+        matcher_process.terminate()
+        
         # Ensure they are fully stopped
         processor_process.wait()
         db_worker_process.wait()
+        matcher_process.wait()
         
         print("[main.py] All processes cleanly terminated. Exiting.")
 

@@ -8,7 +8,7 @@
 
 ```
  ┌─────────────────────────────────────────────────────────────────────┐
- │                    REAL-TIME DETECTION LOOP                        │
+ │                    REAL-TIME DETECTION LOOP                         │
  │                                                                     │
  │   Webcam Frame                                                      │
  │       │                                                             │
@@ -25,7 +25,7 @@
                                      │
                                      ▼
  ┌─────────────────────────────────────────────────────────────────────┐
- │                    FACE PROCESSING WORKER                          │
+ │                    FACE PROCESSING WORKER                           │
  │                                                                     │
  │   captured_targets/                                                 │
  │       │                                                             │
@@ -46,12 +46,13 @@
  ┌─────────────────────────────────────────────────────────────────────┐
  │                  IDENTITY VERIFICATION & API                        │
  │                                                                     │
- │   Facenet512 + Cosine Distance                                      │
- │   1-to-N Gallery Matching (threshold = 0.65)                        │
+ │   src/face_matcher.py monitors faces_aligned/                       │
+ │   Extracts 512-D Embedding & Computes Cosine Distance               │
+ │   1-to-N SQLite Database Matching (threshold = 0.65)                │
  │       │                                                             │
- │       ├──► OWNER  → HTTP POST Owner Registration                    │
- │       └──► INTRUDER → HTTP POST Intruder Alert                      │
- │                  (Sent to Backend API)                              │
+ │       ├──► OWNER  → Logs SAFE. HTTP POST to Webhook                 │
+ │       └──► INTRUDER → Logs ALERT. Package HTTP POST + Snapshot      │
+ │                  (Sent to FastAPI Backend)                          │
  └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -80,12 +81,14 @@ AI/
 │   ├── threat_timer.py        ← Per-ID zone timer (10s threshold)
 │   ├── face_verifier.py       ← YuNet face detection wrapper (get_face_data → bbox + eyes)
 │   ├── face_processor.py      ← Phase 4: Production face preprocessing worker
+│   ├── face_matcher.py        ← Identity verification and webhook trigger
 │   ├── face_detection_yunet_2023mar.onnx  ← YuNet face detection model weights
 │   └── yolov8s.pt             ← YOLOv8s person detection model weights
 │
 ├── data/                      ← Runtime data directories
 │   ├── captured_targets/      ← Raw torso crops saved by watchdog
 │   ├── test_feeds/            ← Test videos for simulated edge deployments
+│   ├── alert_snapshots/       ← Stores full-body images with red bounding boxes for the webhook
 │   ├── faces_aligned/         ← Final 160×160 AI-ready faces
 │   │   └── owner/             ← Owner-routed faces
 │   └── faces.db               ← SQLite database storing 512-D facial embeddings
@@ -98,6 +101,8 @@ AI/
 │   ├── phase5_face_recognition/
 │   └── phase6_gallery_test/
 │
+├── safe_backup.txt            ← Pip dependencies snapshot
+├── safe_env_backup.yml        ← Conda environment snapshot
 ├── .gitignore                 ← Blocks images, models, caches from version control
 ├── .env.example               ← Template for API keys and environment variables
 └── requirements.txt           ← Root Python dependencies
@@ -151,6 +156,9 @@ Lightweight wrapper around OpenCV's YuNet ONNX model. Exposes a `get_face_data(i
 ### `src/threat_timer.py`
 `ZoneTimer` class that tracks how long each tracked person ID has been continuously inside the threat zone. Fires a trigger after `TRIGGER_TIME_SECONDS` (default 10s).
 
+### `src/face_matcher.py`
+Acts as the "Security Guard" of the system. Runs a continuous loop polling for new faces in `data/faces_aligned/`. It extracts 512-D embeddings using `get_embedding()`, compares them against the SQLite database, and fires a webhook payload (including the Base64 alert snapshot) to the FastAPI server based on a 0.65 Cosine threshold limit.
+
 ### Database Layer (`src/database/`)
 - **`db_manager.py`**: Manages the SQLite `faces.db` using a Composite Primary Key of `(property_id, person_id, photo_type)` to ensure data integrity.
 - **`db_worker.py`**: A background process that monitors the owner folder, extracts embeddings, and saves to SQLite before deleting the image.
@@ -167,16 +175,14 @@ pip install -r requirements.txt
 # Create environment file from template
 cp .env.example .env  # Then edit .env to add your API keys
 
-# --- TERMINAL 1: Start the Core Server ---
-# Start the main AI pipeline (Face Processing + DB Worker)
+# --- TERMINAL 1: Start the Backend API ---
+uvicorn src.api.server:app --reload --port 8000
+
+# --- TERMINAL 2: Start the Core Server ---
 python main.py
 
-# --- TERMINAL 2: Start an Edge Node ---
-# Start camera deployment for Property 1
+# --- TERMINAL 3: Start an Edge Node ---
 python deployments/run_p1_live.py
-
-# --- TERMINAL 3: Start the Backend API (Optional) ---
-uvicorn src.api.server:app --host 0.0.0.0 --port 8001
 ```
 
 > **Note for Developers**: You can still run the modules in isolation for targeted debugging by passing the specific `argparse` arguments directly, for example: `python src/watchdog.py --property 1 --camera 0`.

@@ -91,7 +91,6 @@ dependencies:
   - tbb=2021.8.0=h59b6b97_0
   - tk=8.6.15=hf199647_0
   - typing_extensions=4.15.0=py310haa95532_0
-  - tzdata=2026a=he532380_0
   - ucrt=10.0.22621.0=haa95532_0
   - urllib3=2.6.3=py310haa95532_0
   - vc=14.3=h2df5915_10
@@ -105,51 +104,87 @@ dependencies:
   - zstd=1.5.7=h56299aa_0
   - pip:
       - absl-py==2.4.0
+      - annotated-doc==0.0.4
+      - annotated-types==0.7.0
+      - anyio==4.13.0
       - astunparse==1.6.3
+      - beautifulsoup4==4.14.3
+      - blinker==1.9.0
       - certifi==2026.2.25
       - charset-normalizer==3.4.6
+      - click==8.3.1
+      - colorama==0.4.6
       - contourpy==1.3.2
       - cryptography==46.0.5
       - cycler==0.12.1
+      - deepface==0.0.99
+      - exceptiongroup==1.3.1
+      - fastapi==0.135.3
       - filelock==3.25.2
+      - fire==0.7.1
+      - flask==3.1.3
+      - flask-cors==6.0.2
       - flatbuffers==25.12.19
       - fonttools==4.62.1
       - fsspec==2026.2.0
       - gast==0.7.0
+      - gdown==5.2.1
       - google-auth==2.49.1
       - google-auth-oauthlib==1.3.0
       - google-pasta==0.2.0
       - grpcio==1.78.0
-      - h5py==3.16.0
+      - gunicorn==25.3.0
+      - h11==0.16.0
+      - h5py==3.14.0
+      - httpcore==1.0.9
+      - httpx==0.28.1
+      - itsdangerous==2.2.0
       - joblib==1.5.3
       - keras==2.15.0
       - kiwisolver==1.5.0
       - lapx==0.9.4
       - libclang==18.1.1
+      - lightdsa==0.0.3
+      - lightecc==0.0.5
+      - lightphe==0.0.21
       - lz4==4.4.5
       - markdown==3.10.2
+      - markdown-it-py==4.0.0
       - markupsafe==3.0.3
       - matplotlib==3.10.8
+      - mdurl==0.1.2
       - ml-dtypes==0.2.0
       - mtcnn==1.0.0
-      - numpy==2.2.6
+      - namex==0.1.0
+      - numpy==1.26.4
       - nvidia-ml-py==13.595.45
       - oauthlib==3.3.1
       - opencv-contrib-python==4.10.0.84
       - opencv-python==4.10.0.84
       - opt-einsum==3.4.0
+      - optree==0.19.0
+      - pandas==2.3.3
       - pillow==12.1.1
       - polars==1.39.3
       - polars-runtime-32==1.39.3
-      - protobuf==4.25.8
+      - protobuf==4.25.3
       - psutil==7.2.2
       - pyasn1==0.6.3
       - pyasn1-modules==0.4.2
+      - pydantic==2.13.1
+      - pydantic-core==2.46.1
+      - pygments==2.20.0
       - pyparsing==3.3.2
       - python-dateutil==2.9.0.post0
+      - python-dotenv==1.2.2
+      - pytz==2026.1.post1
       - requests-oauthlib==2.0.0
+      - retina-face==0.0.17
+      - rich==14.3.3
       - scipy==1.15.3
       - six==1.17.0
+      - soupsieve==2.8.3
+      - starlette==1.0.0
       - sympy==1.13.1
       - tabulate==0.10.0
       - tensorboard==2.15.2
@@ -159,11 +194,16 @@ dependencies:
       - tensorflow-intel==2.15.0
       - tensorflow-io-gcs-filesystem==0.31.0
       - termcolor==3.3.0
+      - tf-keras==2.15.0
       - torch==2.5.1+cu121
       - torchaudio==2.5.1
       - torchvision==0.25.0
+      - tqdm==4.67.3
+      - typing-inspection==0.4.2
+      - tzdata==2025.3
       - ultralytics==8.4.24
       - ultralytics-thop==2.0.18
+      - uvicorn==0.44.0
       - werkzeug==3.1.6
       - wrapt==1.14.2
 prefix: C:\Users\MA21\anaconda3\envs\AI

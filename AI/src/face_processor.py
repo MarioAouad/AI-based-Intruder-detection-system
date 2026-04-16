@@ -53,8 +53,9 @@ from face_verifier import FaceVerifier
 # ---------------------------------------------------------------------------
 FACES_ALIGNED_DIR         = os.path.join(config.BASE_DIR, "data", "faces_aligned")
 FACES_ALIGNED_OWNER_DIR   = os.path.join(FACES_ALIGNED_DIR, "owner")
+ALERT_SNAPSHOTS_DIR       = os.path.join(config.BASE_DIR, "data", "alert_snapshots")
 
-for d in [FACES_ALIGNED_DIR, FACES_ALIGNED_OWNER_DIR]:
+for d in [FACES_ALIGNED_DIR, FACES_ALIGNED_OWNER_DIR, ALERT_SNAPSHOTS_DIR]:
     os.makedirs(d, exist_ok=True)
 
 # ---------------------------------------------------------------------------
@@ -197,6 +198,15 @@ def process_image(img_path: str, verifier: FaceVerifier) -> bool:
         return False
 
     bbox, left_eye, right_eye = result
+
+    # ── Intruder Snapshot Alert ───────────────────────────────────────
+    if "owner" not in basename.lower():
+        alert_img = image.copy()
+        x, y, w, h = bbox
+        cv2.rectangle(alert_img, (x, y), (x + w, y + h), (0, 0, 255), 3)
+        snapshot_path = os.path.join(ALERT_SNAPSHOTS_DIR, basename)
+        cv2.imwrite(snapshot_path, alert_img)
+        print(f"  [ALERT] Intruder Full-Body Snapshot saved to /data/alert_snapshots.")
 
     # ── Step 1 → Step 2 → Step 3  (in-memory pipeline) ───────────────
     aligned     = step1_affine_alignment(image, left_eye, right_eye)
