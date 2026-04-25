@@ -1,7 +1,7 @@
 import sqlite3
 import json
 import os
-import config
+from src import config
 
 # Put the database right next to the image folders
 DB_PATH = os.path.join(config.BASE_DIR, "data", "faces.db")
@@ -40,6 +40,20 @@ def save_owner(property_id: int, person_id: int, photo_type: str, embedding: lis
         INSERT OR REPLACE INTO owners (property_id, person_id, photo_type, embedding)
         VALUES (?, ?, ?, ?)
     ''', (property_id, person_id, photo_type, embedding_json))
+    
+    conn.commit()
+    conn.close()
+
+def delete_person(property_id: int, person_id: int):
+    """Removes a specific person from a specific property in the SQLite database."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    # Deletes rows only where BOTH the property and person match
+    cursor.execute(
+        "DELETE FROM owners WHERE property_id = ? AND person_id = ?", 
+        (property_id, person_id)
+    )
     
     conn.commit()
     conn.close()

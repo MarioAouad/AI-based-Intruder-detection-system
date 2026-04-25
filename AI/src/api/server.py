@@ -7,6 +7,7 @@ import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
+from src.database.db_manager import delete_person
 
 load_dotenv()
 
@@ -41,9 +42,13 @@ def register_person(payload: RegisterPersonRequest, x_api_key: str = Header(...)
     TARGETS_DIR = os.path.join("data", "captured_targets")
     os.makedirs(TARGETS_DIR, exist_ok=True)
 
-    existing = glob.glob(os.path.join(TARGETS_DIR, f"owner_*_{payload.person_id}_*.jpg"))
+    # Clean the queue: Delete any pending processing files for this specific person AND property
+    existing = glob.glob(os.path.join(TARGETS_DIR, f"owner_{payload.property_id}_{payload.person_id}_*.jpg"))
     for f in existing:
         os.remove(f)
+
+    # Clean the database: Wipe their old 512-D vectors to ensure a fresh update
+    delete_person(payload.property_id, payload.person_id)
 
     decoded_photos = {}
     for photo in payload.photos:
@@ -60,23 +65,25 @@ def register_person(payload: RegisterPersonRequest, x_api_key: str = Header(...)
         with open(filepath, "wb") as f:
             f.write(image_bytes)
 
-    print(f"Registered person {payload.person_id}. Dropped {len(decoded_photos)} images to {TARGETS_DIR} for processing.")
+    print(f"Registered/Updated person {payload.person_id} at property {payload.property_id}. Dropped {len(decoded_photos)} images to {TARGETS_DIR}.")
     return {"status": "registered", "person_id": payload.person_id}
 
 # ── Receive from backend: deregister a person ────────────────────────────────
 
-@app.delete("/persons/{person_id}")
-def deregister_person(person_id: int, x_api_key: str = Header(...)):
+@app.delete("/properties/{property_id}/persons/{person_id}")
+def deregister_person(property_id: int, person_id: int, x_api_key: str = Header(...)):
     if x_api_key != AI_API_KEY:
         raise HTTPException(status_code=401, detail="Invalid API key")
 
-    TARGETS_DIR = os.path.join("data", "captured_targets")
-    existing = glob.glob(os.path.join(TARGETS_DIR, f"owner_*_{person_id}_*.jpg"))
-    for f in existing:
-        os.remove(f)
+    # Tell the database manager to wipe this person from this specific property
+    delete_person(property_id, person_id)
 
-    print(f"Deregistered person {person_id}. Deleted {len(existing)} file(s).")
-    return {"status": "deregistered", "person_id": person_id}
+    print(f"Deregistered person {person_id} from property {property_id}. Removed from DB.")
+    return {
+        "status": "deregistered", 
+        "property_id": property_id, 
+        "person_id": person_id
+    }
 
 
 # ── Send to backend: report a detection ───────────────────────────────────────
