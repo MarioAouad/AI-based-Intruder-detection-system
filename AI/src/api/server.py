@@ -1,5 +1,6 @@
 import base64
 import datetime
+import glob
 import os
 
 import httpx
@@ -40,6 +41,10 @@ def register_person(payload: RegisterPersonRequest, x_api_key: str = Header(...)
     TARGETS_DIR = os.path.join("data", "captured_targets")
     os.makedirs(TARGETS_DIR, exist_ok=True)
 
+    existing = glob.glob(os.path.join(TARGETS_DIR, f"owner_*_{payload.person_id}_*.jpg"))
+    for f in existing:
+        os.remove(f)
+
     decoded_photos = {}
     for photo in payload.photos:
         # Decode base64 to binary image data
@@ -57,6 +62,22 @@ def register_person(payload: RegisterPersonRequest, x_api_key: str = Header(...)
 
     print(f"Registered person {payload.person_id}. Dropped {len(decoded_photos)} images to {TARGETS_DIR} for processing.")
     return {"status": "registered", "person_id": payload.person_id}
+
+# ── Receive from backend: deregister a person ────────────────────────────────
+
+@app.delete("/persons/{person_id}")
+def deregister_person(person_id: int, x_api_key: str = Header(...)):
+    if x_api_key != AI_API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+    TARGETS_DIR = os.path.join("data", "captured_targets")
+    existing = glob.glob(os.path.join(TARGETS_DIR, f"owner_*_{person_id}_*.jpg"))
+    for f in existing:
+        os.remove(f)
+
+    print(f"Deregistered person {person_id}. Deleted {len(existing)} file(s).")
+    return {"status": "deregistered", "person_id": person_id}
+
 
 # ── Send to backend: report a detection ───────────────────────────────────────
 
@@ -99,3 +120,4 @@ def send_detection_event(
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
