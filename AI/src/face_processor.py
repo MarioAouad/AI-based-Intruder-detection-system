@@ -41,9 +41,11 @@ import os
 import glob
 import time
 import math
+import io
 
 import cv2
 import numpy as np
+from PIL import Image, ImageOps
 
 import config
 from face_verifier import FaceVerifier
@@ -62,6 +64,7 @@ for d in [FACES_ALIGNED_DIR, FACES_ALIGNED_OWNER_DIR, ALERT_SNAPSHOTS_DIR]:
 # Constants
 # ---------------------------------------------------------------------------
 FACE_SIZE      = 160         # 160×160 for FaceNet / ArcFace
+MAX_INPUT_DIM  = 1024        # Downscale images larger than this before YuNet
 POLL_INTERVAL  = 1.0         # Seconds between scans
 IMAGE_EXTS     = ("*.jpg", "*.jpeg", "*.png", "*.bmp", "*.webp")
 
@@ -184,11 +187,33 @@ def process_image(img_path: str, verifier: FaceVerifier) -> bool:
 
     print(f"\n[DETECTION] New raw target detected in captured_targets...")
 
-    image = cv2.imread(img_path)
+    # ── EXIF-aware image loading ──────────────────────────────────────
+    # Mobile cameras embed rotation as EXIF metadata. cv2.imread()
+    # ignores EXIF, so faces may arrive sideways. PIL fixes this.
+    try:
+        pil_img = Image.open(img_path)
+        pil_img = ImageOps.exif_transpose(pil_img)
+        pil_img = pil_img.convert("RGB")
+        image = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+    except Exception:
+        image = cv2.imread(img_path)   # Fallback to raw OpenCV read
+
     if image is None:
         print(f"  [SKIP] Cannot read: {basename}")
         delete_file(img_path)
         return False
+
+    # ── Downscale for YuNet (owner registration images only) ────────────
+    # Mobile cameras can produce 4000×3000+ images. YuNet's anchor grid
+    # is calibrated for ~320-1280 px — at 12 MP the face is too large
+    # for detection. Resize proportionally so the longest side ≤ 1024.
+    # This ONLY applies to owner images from the mobile app; watchdog
+    # torso crops are already small and must not be modified.
+    h, w = image.shape[:2]
+    if "owner" in basename.lower() and max(h, w) > MAX_INPUT_DIM:
+        scale = MAX_INPUT_DIM / max(h, w)
+        image = cv2.resize(image, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+        print(f"  [RESIZE] {w}×{h} → {image.shape[1]}×{image.shape[0]}")
 
     # ── Gatekeeper: YuNet face check ──────────────────────────────────
     result = verifier.get_face_data(image)

@@ -1,11 +1,15 @@
 import base64
 import datetime
 import glob
+import io
 import os
 
+import cv2
 import httpx
+import numpy as np
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException
+from PIL import Image, ImageOps
 from pydantic import BaseModel
 from src.database.db_manager import delete_person
 
@@ -52,18 +56,36 @@ def register_person(payload: RegisterPersonRequest, x_api_key: str = Header(...)
 
     decoded_photos = {}
     for photo in payload.photos:
-        # Decode base64 to binary image data
-        image_bytes = base64.b64decode(photo.data)
+        # ── Strip optional data-URI prefix (React Native sometimes includes it) ──
+        raw_b64 = photo.data
+        if "," in raw_b64:
+            raw_b64 = raw_b64.split(",", 1)[1]
+
+        # ── Decode base64 → PIL Image ─────────────────────────────────────────
+        image_bytes = base64.b64decode(raw_b64)
+        pil_image = Image.open(io.BytesIO(image_bytes))
+
+        # ── EXIF Transpose: physically rotate pixels to match orientation tag ─
+        # Mobile front-cameras embed rotation as EXIF metadata instead of
+        # rotating the pixel buffer. OpenCV ignores EXIF, so YuNet would
+        # receive a sideways face and reject it. This single line fixes it.
+        pil_image = ImageOps.exif_transpose(pil_image)
+
+        # ── Force 3-channel RGB (strip alpha if RGBA/P) ───────────────────────
+        pil_image = pil_image.convert("RGB")
+
+        # ── Convert PIL (RGB) → OpenCV (BGR) and save as clean JPEG ───────────
+        cv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+
         decoded_photos[photo.type] = image_bytes
-        
+
         # CREATE THE FILENAME: "owner_{property_id}_{person_id}_{photo_type}.jpg"
         # Example: "owner_42_105_left_profile.jpg"
         filename = f"owner_{payload.property_id}_{payload.person_id}_{photo.type}.jpg"
         filepath = os.path.join(TARGETS_DIR, filename)
-        
-        # Save the image to captured_targets/ so face_processor.py can see it
-        with open(filepath, "wb") as f:
-            f.write(image_bytes)
+
+        # Save the NORMALISED image so face_processor.py always gets a clean BGR JPEG
+        cv2.imwrite(filepath, cv_image)
 
     print(f"Registered/Updated person {payload.person_id} at property {payload.property_id}. Dropped {len(decoded_photos)} images to {TARGETS_DIR}.")
     return {"status": "registered", "person_id": payload.person_id}

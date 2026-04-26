@@ -5,10 +5,10 @@ import time
 
 # Tell Python to look one folder up (in 'src') so it can find config.py
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(os.path.join(BASE_DIR, "src"))
+sys.path.append(BASE_DIR)
 
-from db_manager import init_db, save_owner
-from embedding_utils import get_embedding
+from src.database.db_manager import init_db, save_owner
+from src.database.embedding_utils import get_embedding
 
 OWNER_DIR = os.path.join(BASE_DIR, "data", "faces_aligned", "owner")
 
